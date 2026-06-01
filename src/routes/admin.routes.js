@@ -1,0 +1,30 @@
+import express from "express";
+import { isAuthenticated, isAdmin } from "../middlewares/auth.middleware.js";
+import { getAllUsers, blockUser, unblockUser, deleteUser } from "../controllers/admin.controller.js";
+
+import { createService, getAllServices, getServiceBySlug, getServicesByCategory, updateService, deleteService } from "../controllers/service.controller.js";
+
+import { getServicePlans, createServicePlan, getServicePlanByServiceId, updateServicePlan, deleteServicePlan } from "../controllers/servicePlan.controller.js";
+
+
+const router = express.Router();
+
+router.get("/users", isAuthenticated, isAdmin, getAllUsers);
+router.put("/users/:id/block", isAuthenticated, isAdmin, blockUser);
+router.put("/users/:id/unblock", isAuthenticated, isAdmin, unblockUser);
+router.delete("/users/:id", isAuthenticated, isAdmin, deleteUser);
+
+router.post("/services", isAuthenticated, isAdmin, createService);
+router.get("/services", isAuthenticated, isAdmin, getAllServices);
+router.get("/services/:slug", isAuthenticated, isAdmin, getServiceBySlug);
+router.get("/services/category/:category", isAuthenticated, isAdmin, getServicesByCategory);
+router.put("/services/:slug", isAuthenticated, isAdmin, updateService);
+router.delete("/services/:slug", isAuthenticated, isAdmin, deleteService);
+
+router.get("/service-plans", isAuthenticated, isAdmin, getServicePlans);
+router.post("/service-plans", isAuthenticated, isAdmin, createServicePlan);
+router.get("/service-plans/:serviceId", isAuthenticated, isAdmin, getServicePlanByServiceId);
+router.put("/service-plans/:serviceId", isAuthenticated, isAdmin, updateServicePlan);
+router.delete("/service-plans/:serviceId", isAuthenticated, isAdmin, deleteServicePlan);
+
+export default router;
