@@ -1,50 +1,83 @@
 import mongoose from "mongoose";
 
-const orderSchema = new mongoose.Schema({
+const orderSchema = new mongoose.Schema(
+  {
     user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
+
     service: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Service",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Service",
+      required: true,
     },
+
     plan: {
-        type: String,
-        enum: ["basic", "standard", "premium"],
-        required: true
+      type: String,
+      enum: ["basic", "standard", "premium"],
+      required: true,
     },
+
     amount: {
-        type: Number,
-        min: 1,
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+    planFeatures: {
+        type: [String],
         required: true
     },
-    orderStatus: {  
-        type: String,
-        enum: ["pending", "completed", "cancelled"],
-        default: "pending"
+
+    orderStatus: {
+      type: String,
+      enum: ["pending", "processing", "completed", "cancelled"],
+      default: "pending",
     },
+
+    // ⚡ FIX 1: Remove "unique: true" from here directly so Mongoose doesn't misbehave
     paymentId: {
-        type: String,
-        unique: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      unique: true,
+      sparse: true,
+      default: null,
     },
+
     razorpayOrderId: {
-        type: String,
-        unique: true
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
-    signature: {
-        type: String,
-        unique: true
-    },
+
     razorpayPaymentId: {
-        type: String,
-        unique: true
-    }
+      type: String,
+      default: null,
+      trim: true,
+    },
 
-}, { timestamps: true });
+    signature: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-export default mongoose.model("Order", orderSchema);
+// Standard indexes
+orderSchema.index({ user: 1 });
+orderSchema.index({ service: 1 });
+orderSchema.index({ orderStatus: 1 });
+
+// ⚡ FIX 2: Explicitly declare the unique, sparse index here at the schema level.
+// This FORCES MongoDB to allow multiple 'null' values for paymentId!
+
+const Order = mongoose.model("Order", orderSchema);
 
 export default Order;

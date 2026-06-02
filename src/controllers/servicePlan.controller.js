@@ -29,9 +29,7 @@ export const createServicePlan = async (req, res) => {
     try {
         const {
             serviceId,
-            basic,
-            standard,
-            premium
+            plans
         } = req.body;
 
         if (!serviceId) {
@@ -51,13 +49,7 @@ export const createServicePlan = async (req, res) => {
         
         const servicePlan = await ServicePlan.create({
             serviceId,
-            plans: [
-                {
-                    basic,
-                    standard,
-                    premium
-                }
-            ],
+            plans,
             createdBy: req.user._id
         });
 

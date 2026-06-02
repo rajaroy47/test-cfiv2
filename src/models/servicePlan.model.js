@@ -7,9 +7,8 @@ const ServicePlanSchema = new mongoose.Schema({
         required: true
     },
 
-    plans: [
-        {
-            basic: {
+    plans: {
+        basic: {
                 name: {
                     type: String,
                     default: "Basic"
@@ -71,9 +70,7 @@ const ServicePlanSchema = new mongoose.Schema({
                 },
                 features: [String]
             }
-        }
-    ],
-
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -85,4 +82,5 @@ const ServicePlanSchema = new mongoose.Schema({
 const ServicePlan = mongoose.model("ServicePlan", ServicePlanSchema);
 
 export default ServicePlan;
+
 
