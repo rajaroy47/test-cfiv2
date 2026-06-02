@@ -75,9 +75,6 @@ orderSchema.index({ user: 1 });
 orderSchema.index({ service: 1 });
 orderSchema.index({ orderStatus: 1 });
 
-// ⚡ FIX 2: Explicitly declare the unique, sparse index here at the schema level.
-// This FORCES MongoDB to allow multiple 'null' values for paymentId!
-
 const Order = mongoose.model("Order", orderSchema);
 
 export default Order;
