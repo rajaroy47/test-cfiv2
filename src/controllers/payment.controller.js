@@ -57,7 +57,8 @@ export const processPayment = async (req, res) => {
     const servicePlan = await ServicePlan.findOne({ serviceId });
 
     const order = await Order.create({
-      user: "6a1d2566758b23e44bbde9ab", // Tested static ID
+      // user: "6a1d2566758b23e44bbde9ab", // Tested static ID
+      user: req.user._id,
       service: serviceId,
       plan,
       amount,

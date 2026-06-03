@@ -20,9 +20,19 @@ export const registerUser = async (req, res) => {
             email,
             password
         });
+        
         // Generate token
         const token = generateToken({ id: user._id });
-        res.status(201).json({ message: "User registered successfully", token });
+        
+        // Convert to plain object and remove password before sending (if you decide to send user data here later)
+        const userWithoutPassword = user.toObject();
+        delete userWithoutPassword.password;
+
+        res.status(201).json({ 
+            message: "User registered successfully", 
+            user: userWithoutPassword, 
+            token 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -51,14 +61,22 @@ export const loginUser = async (req, res) => {
         // Generate token
         const token = generateToken({ id: user._id });
 
-        // console.log(token);
-
         res.cookie("token", token, {
             httpOnly: true,
+            secure: false,
+            sameSite: "lax",
             expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         });
 
-        res.status(200).json({ message: "Login successful", role: user.role, token });
+        // 🌟 SAFETY FIX: Convert document to plain object and strip the password
+        const userWithoutPassword = user.toObject();
+        delete userWithoutPassword.password;
+
+        res.status(200).json({ 
+            message: "Login successful", 
+            user: userWithoutPassword, 
+            token 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

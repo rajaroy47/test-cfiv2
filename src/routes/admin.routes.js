@@ -1,10 +1,16 @@
 import express from "express";
+
 import { isAuthenticated, isAdmin } from "../middlewares/auth.middleware.js";
 import { getAllUsers, blockUser, unblockUser, deleteUser } from "../controllers/admin.controller.js";
 
 import { createService, getAllServices, getServiceBySlug, getServicesByCategory, updateService, deleteService } from "../controllers/service.controller.js";
 
 import { getServicePlans, createServicePlan, getServicePlanByServiceId, updateServicePlan, deleteServicePlan } from "../controllers/servicePlan.controller.js";
+
+import { getOrderDetails } from "../controllers/order.controller.js";
+
+
+import { updateWebsiteSettings, getWebsiteSettings } from "../controllers/websiteSetting.controller.js";
 
 
 const router = express.Router();
@@ -26,5 +32,10 @@ router.post("/service-plans", isAuthenticated, isAdmin, createServicePlan);
 router.get("/service-plans/:serviceId", isAuthenticated, isAdmin, getServicePlanByServiceId);
 router.put("/service-plans/:serviceId", isAuthenticated, isAdmin, updateServicePlan);
 router.delete("/service-plans/:serviceId", isAuthenticated, isAdmin, deleteServicePlan);
+
+router.get("/orders", getOrderDetails)
+
+router.put("/website-settings", isAuthenticated, isAdmin, updateWebsiteSettings);
+router.get("/website-settings", isAuthenticated, isAdmin, getWebsiteSettings);
 
 export default router;

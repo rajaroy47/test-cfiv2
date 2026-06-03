@@ -73,7 +73,7 @@ export const updateWebsiteSettings = async (req, res) => {
     const updatedSettings = await WebsiteSetting.findOneAndUpdate(
       {},
       { $set: updateData },
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: "after", upsert: true, runValidators: true }
     );
 
     return res.status(200).json({
