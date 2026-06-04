@@ -36,6 +36,13 @@ const serviceSchema = new mongoose.Schema({
         required: true
     },
 
+    // new fields added
+
+    // requiredDocs: {
+    //     type: [String],
+    //     required: true
+    // },
+
     faq: [
         {
             question: String,

@@ -1,15 +1,54 @@
 import jwt from "jsonwebtoken";
 
-export const generateToken = (payload) => {
-    return jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRE,
-    });
+/**
+ * Generate Access Token
+ */
+export const generateAccessToken = (user) => {
+    return jwt.sign(
+        {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            fullName: user.fullName,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRE,
+        }
+    );
 };
 
-export const verifyToken = (token) => {
-    try {
-        return jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-        throw new Error("Invalid token");
-    }
+/**
+ * Generate Refresh Token
+ */
+export const generateRefreshToken = (user) => {
+    return jwt.sign(
+        {
+            id: user._id,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRE,
+        }
+    );
+};
+
+/**
+ * Verify Access Token
+ */
+export const verifyAccessToken = (token) => {
+    return jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET
+    );
+};
+
+/**
+ * Verify Refresh Token
+ */
+export const verifyRefreshToken = (token) => {
+    return jwt.verify(
+        token,
+        process.env.REFRESH_TOKEN_SECRET
+    );
 };

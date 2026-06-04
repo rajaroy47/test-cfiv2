@@ -28,6 +28,12 @@ const userSchema = new mongoose.Schema({
     verificationToken: {
         type: String,
     },
+    verificationTokenExpiry: {
+        type: Date,
+    },
+    refreshToken: {
+        type: String,
+    },
     isBlocked: {
         type: Boolean,
         default: false,

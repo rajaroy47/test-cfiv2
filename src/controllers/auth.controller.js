@@ -1,98 +1,222 @@
-import { generateToken, verifyToken } from "../utils/jwtToken.js";
 import User from "../models/user.model.js";
 
+import {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyRefreshToken,
+} from "../utils/jwtToken.js";
+
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+};
 
 export const registerUser = async (req, res) => {
     try {
         const { fullName, email, password } = req.body;
 
         if (!fullName || !email || !password) {
-            return res.status(400).json({ message: "Please provide all required fields" });
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required",
+            });
         }
-        // Check if user already exists
+
         const existingUser = await User.findOne({ email });
+
         if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+            return res.status(409).json({
+                success: false,
+                message: "User already exists",
+            });
         }
-        // Create new user
+
         const user = await User.create({
             fullName,
             email,
-            password
+            password,
         });
-        
-        // Generate token
-        const token = generateToken({ id: user._id });
-        
-        // Convert to plain object and remove password before sending (if you decide to send user data here later)
-        const userWithoutPassword = user.toObject();
-        delete userWithoutPassword.password;
 
-        res.status(201).json({ 
-            message: "User registered successfully", 
-            user: userWithoutPassword, 
-            token 
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        user.refreshToken = refreshToken;
+
+        await user.save({
+            validateBeforeSave: false,
         });
+
+        const createdUser = await User.findById(user._id).select(
+            "-password -refreshToken"
+        );
+
+        return res
+            .status(201)
+            .cookie("accessToken", accessToken, {
+                ...cookieOptions,
+                maxAge: 15 * 60 * 1000,
+            })
+            .cookie("refreshToken", refreshToken, {
+                ...cookieOptions,
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            })
+            .json({
+                success: true,
+                message: "User registered successfully",
+                user: createdUser,
+                accessToken,
+                refreshToken,
+            });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
     }
 };
 
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+
         if (!email || !password) {
-            return res.status(400).json({ message: "Please provide email and password" });
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required",
+            });
         }
+
         const user = await User.findOne({ email });
+
         if (!user) {
-            return res.status(400).json({ message: "Invalid email or password" });
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password",
+            });
         }
 
         if (user.isBlocked) {
-            return res.status(403).json({ message: "Your account has been blocked. Please contact support." });
+            return res.status(403).json({
+                success: false,
+                message: "Your account has been blocked",
+            });
         }
 
-        // Check if password is correct
-        const isMatch = await user.matchPassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid email or password" });
+        const isPasswordCorrect =
+            await user.matchPassword(password);
+
+        if (!isPasswordCorrect) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password",
+            });
         }
-        // Generate token
-        const token = generateToken({ id: user._id });
 
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        user.refreshToken = refreshToken;
+
+        await user.save({
+            validateBeforeSave: false,
         });
 
-        // 🌟 SAFETY FIX: Convert document to plain object and strip the password
-        const userWithoutPassword = user.toObject();
-        delete userWithoutPassword.password;
+        const loggedInUser = await User.findById(user._id).select(
+            "-password -refreshToken"
+        );
 
-        res.status(200).json({ 
-            message: "Login successful", 
-            user: userWithoutPassword, 
-            token 
-        });
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, {
+                ...cookieOptions,
+                maxAge: 15 * 60 * 1000,
+            })
+            .cookie("refreshToken", refreshToken, {
+                ...cookieOptions,
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            })
+            .json({
+                success: true,
+                message: "Login successful",
+                user: loggedInUser,
+                accessToken,
+                refreshToken,
+            });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const refreshAccessToken = async (req, res) => {
+    try {
+        const incomingRefreshToken =
+            req.cookies?.refreshToken;
+
+        if (!incomingRefreshToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Refresh token missing",
+            });
+        }
+
+        const decoded = verifyRefreshToken(
+            incomingRefreshToken
+        );
+
+        const user = await User.findById(decoded.id);
+
+        if (
+            !user ||
+            user.refreshToken !== incomingRefreshToken
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid refresh token",
+            });
+        }
+
+        const accessToken = generateAccessToken(user);
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, {
+                ...cookieOptions,
+                maxAge: 15 * 60 * 1000,
+            })
+            .json({
+                success: true,
+                accessToken,
+            });
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: "Refresh token expired",
+        });
     }
 };
 
 export const logoutUser = async (req, res) => {
     try {
-        res.cookie("token", "", {
-            httpOnly: true,
-            expires: new Date(0),
-        });
+        if (req.user) {
+            await User.findByIdAndUpdate(req.user._id, {
+                $unset: {
+                    refreshToken: 1,
+                },
+            });
+        }
 
-        return res.status(200).json({
-            success: true,
-            message: "Logout successful",
-        });
+        return res
+            .clearCookie("accessToken")
+            .clearCookie("refreshToken")
+            .status(200)
+            .json({
+                success: true,
+                message: "Logout successful",
+            });
     } catch (error) {
         return res.status(500).json({
             success: false,

@@ -14,3 +14,33 @@ export const getOrderDetails = async (req, res)=>{
         orders: orders
     });
 }
+
+export const getOrderById = async (req, res)=>{
+    const order = await Order.findById(req.params.id).populate("user", "fullName email").populate("service", "name slug");
+
+    if (!order) {
+        res.status(400).json({ 
+            message: "Order Not Found", 
+        });
+    }
+
+    return res.status(200).json({
+        message: "Order fetched successfully", 
+        order: order
+    }); 
+}
+
+export const getMyOrders = async (req, res)=>{
+    const orders = await Order.find({ user: req.user._id }).populate("user", "fullName email").populate("service", "name slug");
+
+    if (!orders) {
+        res.status(400).json({ 
+            message: "Order Not Found", 
+        });
+    }
+    
+    return res.status(200).json({
+        message: "Orders fetched successfully", 
+        orders: orders
+    });
+}

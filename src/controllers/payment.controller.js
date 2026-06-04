@@ -30,14 +30,34 @@ const getRequestMetadata = (req) => {
 
 export const processPayment = async (req, res) => {
   try {
-    const { serviceId, plan, amount } = req.body;
+    const { serviceId, plan } = req.body;
 
-    if (!serviceId || !plan || !amount) {
+    if (!serviceId || !plan) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "Service ID and plan are required",
       });
     }
+
+    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid service ID",
+      });
+    }
+
+    // const allowedPlans = [
+    //   "basic",
+    //   "standard",
+    //   "premium",
+    // ];
+
+    // if (!allowedPlans.includes(plan)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid plan selected",
+    //   });
+    // }
 
     const service = await Service.findById(serviceId);
 
@@ -48,37 +68,104 @@ export const processPayment = async (req, res) => {
       });
     }
 
-    const razorpayOrder = await RazorpaInstance.orders.create({
-      amount: Number(amount) * 100,
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`,
+    const servicePlan = await ServicePlan.findOne({
+      serviceId,
     });
 
-    const servicePlan = await ServicePlan.findOne({ serviceId });
+    if (!servicePlan) {
+      return res.status(404).json({
+        success: false,
+        message: "Service plan not found",
+      });
+    }
+
+    const selectedPlan = servicePlan?.plans?.[plan];
+
+    if (!selectedPlan) {
+      return res.status(404).json({
+        success: false,
+        message: `${plan} plan not found`,
+      });
+    }
+
+    const amount = Number(selectedPlan.price);
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid plan amount",
+      });
+    }
+
+    const existingPendingOrder =
+      await Order.findOne({
+        user: req.user._id,
+        service: serviceId,
+        plan,
+        orderStatus: "pending",
+      });
+
+    if (existingPendingOrder) {
+      return res.status(200).json({
+        success: true,
+        orderId:
+          existingPendingOrder.razorpayOrderId,
+        amount:
+          existingPendingOrder.amount * 100,
+        dbOrderId:
+          existingPendingOrder._id,
+        message:
+          "Pending order already exists",
+      });
+    }
+
+    const razorpayOrder =
+      await RazorpaInstance.orders.create({
+        amount: Math.round(amount * 100),
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+        notes: {
+          userId: req.user._id.toString(),
+          serviceId,
+          plan,
+        },
+      });
 
     const order = await Order.create({
-      // user: "6a1d2566758b23e44bbde9ab", // Tested static ID
       user: req.user._id,
       service: serviceId,
       plan,
       amount,
-      planFeatures: servicePlan.plans[plan].features,
-      razorpayOrderId: razorpayOrder.id,
+      planFeatures:
+        selectedPlan.features || [],
+      razorpayOrderId:
+        razorpayOrder.id,
       orderStatus: "pending",
     });
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       dbOrderId: order._id,
+      message:
+        "Payment order created successfully",
     });
+
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Process Payment Error:",
+      error
+    );
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message:
+        process.env.NODE_ENV ===
+        "production"
+          ? "Something went wrong"
+          : error.message,
     });
   }
 };
@@ -210,4 +297,33 @@ export const getSuccessMsg = (req, res) => {
     success: true,
     message: "Payment successful",
   });
-};  
+};
+
+export const getMyPaymentDetails = async (req, res) => {
+  try {
+    console.log(req.user)
+    const payments = await Payment.find({ user: req.user._id })
+      .populate("service", "name slug")
+      .populate("order", "plan")
+
+
+    if (!payments) {
+      return res.status(404).json({
+        success: false,
+        message: "No payments found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      payments,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+

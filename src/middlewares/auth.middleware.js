@@ -1,23 +1,48 @@
-import { verifyToken } from "../utils/jwtToken.js";
 import User from "../models/user.model.js";
 
-export const isAuthenticated = async (req, res, next) => {
+import {
+    verifyAccessToken,
+} from "../utils/jwtToken.js";
+
+export const isAuthenticated = async (
+    req,
+    res,
+    next
+) => {
     try {
-        const token = req.headers.authorization?.split(" ")[1];
+        const token =
+            req.cookies?.accessToken ||
+            req.header("Authorization")?.replace(
+                "Bearer ",
+                ""
+            );
 
         if (!token) {
             return res.status(401).json({
-                message: "Not authorized, no token",
+                success: false,
+                message: "Unauthorized access",
             });
         }
 
-        const decoded = verifyToken(token);
+        const decoded =
+            verifyAccessToken(token); 
 
-        const user = await User.findById(decoded.id).select("-password");
+        const user = await User.findById(
+            decoded.id
+        ).select("-password -refreshToken");
 
         if (!user) {
             return res.status(401).json({
+                success: false,
                 message: "User not found",
+            });
+        }
+
+        if (user.isBlocked) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "Your account has been blocked",
             });
         }
 
@@ -26,15 +51,23 @@ export const isAuthenticated = async (req, res, next) => {
         next();
     } catch (error) {
         return res.status(401).json({
-            message: "Not authorized, token failed",
+            success: false,
+            message: "Invalid or expired token",
         });
     }
 };
 
-export const isAdmin = (req, res, next) => {
-    if (req.user && req.user.role === "admin") {
-        next();
-    } else {
-        return res.status(403).json({ message: "Not authorized as an admin" });
+export const isAdmin = (
+    req,
+    res,
+    next
+) => {
+    if (req.user?.role === "admin") {
+        return next();
     }
+
+    return res.status(403).json({
+        success: false,
+        message: "Admin access required",
+    });
 };
