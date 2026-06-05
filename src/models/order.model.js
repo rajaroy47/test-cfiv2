@@ -42,8 +42,8 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
       unique: true,
-      sparse: true,
-      default: null,
+      sparse: true
+      // default: null,
     },
 
     razorpayOrderId: {

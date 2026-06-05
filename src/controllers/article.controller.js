@@ -1,13 +1,21 @@
 import Article from "../models/article.model.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const createArticle = async (req, res) => {
   try {
-    const { title, slug, content, image, category } = req.body;
+    const { title, slug, content, category } = req.body;
 
-    if (!title || !slug || !content || !image || !category) {
+    if (!title || !slug || !content || !category) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Article image is required",
       });
     }
 
@@ -20,12 +28,17 @@ export const createArticle = async (req, res) => {
       });
     }
 
+    const uploadedImage = await uploadToCloudinary(
+      req.file.buffer,
+      "articles"
+    );
+
     const article = await Article.create({
       title,
       slug,
       content,
-      image,
       category,
+      image: uploadedImage.secure_url,
       createdBy: req.user._id,
     });
 
@@ -169,12 +182,10 @@ export const updateArticle = async (req, res) => {
       });
     }
 
-    const { title, slug, content, image, category } = req.body;
+    const { title, slug, content, category } = req.body;
 
     if (slug && slug !== article.slug) {
-      const existing = await Article.findOne({
-        slug,
-      });
+      const existing = await Article.findOne({ slug });
 
       if (existing) {
         return res.status(409).json({
@@ -184,11 +195,22 @@ export const updateArticle = async (req, res) => {
       }
     }
 
+    let imageUrl = article.image;
+
+    if (req.file) {
+      const uploadedImage = await uploadToCloudinary(
+        req.file.buffer,
+        "articles"
+      );
+
+      imageUrl = uploadedImage.secure_url;
+    }
+
     article.title = title || article.title;
     article.slug = slug || article.slug;
     article.content = content || article.content;
-    article.image = image || article.image;
     article.category = category || article.category;
+    article.image = imageUrl;
 
     await article.save();
 

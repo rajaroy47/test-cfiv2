@@ -55,7 +55,7 @@ export const registerUser = async (req, res) => {
             .status(201)
             .cookie("accessToken", accessToken, {
                 ...cookieOptions,
-                maxAge: 15 * 60 * 1000,
+                maxAge: 55 * 60 * 1000,
             })
             .cookie("refreshToken", refreshToken, {
                 ...cookieOptions,

@@ -21,6 +21,40 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user',
     },
+    avatar: {
+        type: String,
+    },
+    userDetails: {
+        address: {
+            streetAddress: { type: String, trim: true },
+            city: { type: String, trim: true },
+            state: { type: String, trim: true },
+            postalCode: { 
+                type: String, 
+                trim: true,
+                match: [/^\d{6}$/, 'Please fill a valid 6-digit Pincode'] 
+            },
+            country: { type: String, default: 'India', trim: true }
+        },
+        identity: {
+            panCard: {
+                type: String,
+                uppercase: true,
+                trim: true,
+                match: [/[A-Z]{5}[0-9]{4}[A-Z]{1}/, 'Please fill a valid PAN card number'],
+            },
+            aadhaarCard: {
+                type: String,
+                trim: true,
+                match: [/^\d{12}$/, 'Please fill a valid 12-digit Aadhaar number'],
+            },
+            phone: {
+                type: String,
+                trim: true,
+                match: [/^\+?[1-9]\d{1,14}$/, 'Please fill a valid phone number'],
+            }
+        }
+    },
     isVerified: {
         type: Boolean,
         default: false,

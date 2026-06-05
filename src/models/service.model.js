@@ -36,11 +36,17 @@ const serviceSchema = new mongoose.Schema({
         required: true
     },
 
-    // new fields added
+    // new fields will be implemnted letter (05.06.26)
 
     // requiredDocs: {
     //     type: [String],
     //     required: true
+    // },
+
+    // estimateDays: {
+    //     type: Number,
+    //     required: true,
+    //     default: 7
     // },
 
     faq: [

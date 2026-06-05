@@ -13,6 +13,9 @@ import { updateWebsiteSettings, getWebsiteSettings } from "../controllers/websit
 
 import { createArticle, getAllArticles, getArticleBySlug, getArticleById, updateArticle, deleteArticle, getRelatedArticles} from "../controllers/article.controller.js";
 
+import { uploadImage } from "../controllers/file.test.controller.js";
+
+import { upload } from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
 
@@ -35,13 +38,16 @@ router.get("/service-plans/service/:serviceId", isAuthenticated, isAdmin, getSer
 router.put("/service-plans/service/:serviceId", isAuthenticated, isAdmin, updateServicePlan);
 router.delete("/service-plans/service/:serviceId", isAuthenticated, isAdmin, deleteServicePlan);
 
-router.post("/articles", isAuthenticated, isAdmin, createArticle);
+router.post("/articles", isAuthenticated, isAdmin, upload.single("image"), createArticle);
 router.get("/articles", getAllArticles);
 router.get("/articles/slug/:slug", getArticleBySlug);
 router.get("/articles/:id/related", getRelatedArticles);
 router.get("/articles/:id", getArticleById);
-router.put("/articles/:id", isAuthenticated, isAdmin, updateArticle);
+router.put("/articles/:id", isAuthenticated, isAdmin, upload.single("image"), updateArticle);
 router.delete("/articles/:id", isAuthenticated, isAdmin, deleteArticle);
+
+// for testing
+router.post("/upload", isAuthenticated, isAdmin, upload.single("image"), uploadImage);
 
 router.get("/website-settings", isAuthenticated, isAdmin, getWebsiteSettings);
 router.put("/website-settings", isAuthenticated, isAdmin, updateWebsiteSettings);

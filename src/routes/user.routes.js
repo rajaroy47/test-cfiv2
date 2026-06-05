@@ -4,12 +4,14 @@ import { getUserProfile, updateUserProfile } from "../controllers/user.controlle
 import { getMyOrders } from "../controllers/order.controller.js";
 import { getMyPaymentDetails, getRazorpayKey, getSuccessMsg, processPayment, verifyPayment } from "../controllers/payment.controller.js";
 
+import { upload } from "../middlewares/upload.middleware.js";
+
 
 
 const router = express.Router();
 
 router.get("/profile", isAuthenticated, getUserProfile);
-router.put("/profile", isAuthenticated, updateUserProfile);
+router.put("/profile", isAuthenticated, upload.single("avatar"), updateUserProfile);
 
 // orders
 router.get("/my-orders", isAuthenticated, getMyOrders);
@@ -21,6 +23,7 @@ router.post("/payment/success", isAuthenticated, getSuccessMsg);
 
 // payments
 router.get("/my-payments", isAuthenticated, getMyPaymentDetails);
+
 
 export default router;
 

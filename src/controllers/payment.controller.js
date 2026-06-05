@@ -7,6 +7,7 @@ import Service from "../models/service.model.js";
 import Order from "../models/order.model.js";
 import Payment from "../models/payment.model.js";
 import ServicePlan from "../models/servicePlan.model.js";
+import ServiceStatus from "../models/serviceStatus.model.js";
 
 
 const getRequestMetadata = (req) => {
@@ -262,6 +263,28 @@ export const verifyPayment = async (req, res) => {
 
     await order.save({ session });
 
+
+    // create-serviceStatus
+    const existingServiceStatus =
+      await ServiceStatus.findOne({
+        serviceId: order.service,
+        subscribedBy: order.user,
+      }).session(session);
+
+    if (!existingServiceStatus) {
+      await ServiceStatus.create(
+        [
+          {
+            serviceId: order.service,
+            subscribedBy: order.user,
+            status: "processing",
+          },
+        ],
+        { session }
+      );
+    }
+
+
     // Commit all changes across both collections simultaneously
     await session.commitTransaction();
     session.endSession();
@@ -313,6 +336,8 @@ export const getMyPaymentDetails = async (req, res) => {
         message: "No payments found",
       });
     }
+
+
 
     return res.status(200).json({
       success: true,

@@ -1,33 +1,162 @@
 import User from "../models/user.model.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select("-password");
-        res.status(200).json({ message: "User profile retrieved successfully", user });
+        const user = await User.findById(req.user._id)
+            .select("-password -refreshToken");
+
+        return res.status(200).json({
+            success: true,
+            user,
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
     }
 };
+
+/**
+ * json raw data
+ * {
+    "address": {
+        "streetAddress": "MG Road, Howrah, Kolkata - 700001",
+        "city": "Kolkata",
+        "state": "West Bengal",
+        "postalCode": "700001"
+    },
+
+    "identity": {
+        "panCard": "AAAAA1234A",
+        "aadhaarCard": "986585698569",
+        "phone": "8101745698"
+    }
+}
+
+* form data
+*
+*
+*
+ */
+
 
 export const updateUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
+
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
         }
-        // Update user profile
-        const { fullName, email } = req.body;
 
-        if (!fullName && !email) {
-            return res.status(400).json({ message: "Please provide at least one field to update" });
-        }   
+        let { fullName, address, identity } = req.body;
 
-        user.fullName = fullName || user.fullName;
-        user.email = email || user.email;
+        // Initialize userDetails if it does not exist in the document
+        if (!user.userDetails) {
+            user.userDetails = {};
+        }
 
+        // 1. Safely Parse Address (Handles both JSON and form-data strings)
+        if (address) {
+            if (typeof address === "string") {
+                try {
+                    address = JSON.parse(address);
+                } catch (e) {
+                    return res.status(400).json({ success: false, message: "Invalid address format" });
+                }
+            }
+            
+            // Assign sub-properties explicitly to ensure Mongoose tracks changes
+            user.userDetails.address = {
+                ...(user.userDetails.address || {}),
+                ...address,
+            };
+        }
+
+        // 2. Safely Parse Identity (Handles both JSON and form-data strings)
+        if (identity) {
+            if (typeof identity === "string") {
+                try {
+                    identity = JSON.parse(identity);
+                } catch (e) {
+                    return res.status(400).json({ success: false, message: "Invalid identity format" });
+                }
+            }
+
+            if (identity.panCard) {
+                identity.panCard = identity.panCard.toUpperCase();
+            }
+
+            user.userDetails.identity = {
+                ...(user.userDetails.identity || {}),
+                ...identity,
+            };
+        }
+
+        // 3. Process File Upload (Avatar)
+        if (req.file) {
+            const uploadedAvatar = await uploadToCloudinary(
+                req.file.buffer,
+                "avatars"
+            );
+            user.avatar = uploadedAvatar.secure_url;
+        }
+
+        // 4. Update Simple Strings
+        if (fullName && fullName.trim()) {
+            user.fullName = fullName.trim();
+        }
+
+        // Tell Mongoose explicitly to check nested objects for modifications
+        user.markModified('userDetails');
+
+        // Save changes
         await user.save();
-        res.status(200).json({ message: "User profile updated successfully", user });
+
+        // Fetch freshly updated profile without sensitive data
+        const updatedUser = await User.findById(user._id)
+            .select("-password -refreshToken");
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user: updatedUser,
+        });
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
     }
 };
+
+// working on 
+// {
+//     "address": {
+//         "streetAddress": "MG Road, Howrah, Kolkata - 700001",
+//         "city": "Kolkata",
+//         "state": "West Bengal",
+//         "postalCode": "700001"
+//     },
+
+//     "identity": {
+//         "panCard": "AAAAA1234A",
+//         "aadhaarCard": "986585698569",
+//         "phone": "8101745698"
+//     }
+// }
+
+// not working on
+
+// fullName              Ayon Manna
+
+// address               {"streetAddress":"MG Road","city":"Kolkata"}
+
+// identity              {"phone":"8101745698","panCard":"AAAAA1234A"}
+
+// avatar                [FILE]
