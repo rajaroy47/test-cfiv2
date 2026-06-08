@@ -38,16 +38,16 @@ const serviceSchema = new mongoose.Schema({
 
     // new fields will be implemnted letter (05.06.26)
 
-    // requiredDocs: {
-    //     type: [String],
-    //     required: true
-    // },
+    requiredDocs: {
+        type: [String],
+        required: true
+    },
 
-    // estimateDays: {
-    //     type: Number,
-    //     required: true,
-    //     default: 7
-    // },
+    estimateDays: {
+        type: Number,
+        required: true,
+        default: 7
+    },
 
     faq: [
         {
@@ -55,6 +55,16 @@ const serviceSchema = new mongoose.Schema({
             answer: String
         }
     ],
+
+    isPopular: {
+        type: Boolean,
+        default: false
+    },
+ 
+    isActive: {
+        type: Boolean,
+        default: true
+    },
 
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,

@@ -55,7 +55,7 @@ export const deleteUser = async (req, res) => {
         return res.status(403).json({ message: "Cannot delete an admin user" });
     }
 
-    await user.remove();
+    await user.deleteOne({ _id: userId });
     res.status(200).json({ message: "User deleted successfully" });
 };
 

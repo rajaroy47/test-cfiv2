@@ -24,13 +24,9 @@ export const getServicePlans = async (req, res) => {
     }
 };
 
-
 export const createServicePlan = async (req, res) => {
     try {
-        const {
-            serviceId,
-            plans
-        } = req.body;
+        const { serviceId, plans } = req.body;
 
         if (!serviceId) {
             return res.status(400).json({
@@ -70,12 +66,14 @@ export const createServicePlan = async (req, res) => {
 export const getServicePlanByServiceId = async (req, res) => {
     try {
         const serviceId = req.params.serviceId;
+        
         if (!serviceId) {
             return res.status(400).json({
                 success: false,
                 message: "Service ID is required"
             });
         }
+
         const servicePlan = await ServicePlan.findOne({ serviceId }).populate("serviceId", "name slug");
 
         if (!servicePlan) { 
@@ -84,6 +82,7 @@ export const getServicePlanByServiceId = async (req, res) => {
                 message: "Service plan not found for the given service ID"
             });
         }
+
         return res.status(200).json({
             success: true,
             data: servicePlan
@@ -100,28 +99,52 @@ export const getServicePlanByServiceId = async (req, res) => {
 export const updateServicePlan = async (req, res) => {
     try {
         const serviceId = req.params.serviceId;
+        
         if (!serviceId) {
             return res.status(400).json({
                 success: false,
                 message: "Service ID is required"
             });
         }
+
         const servicePlan = await ServicePlan.findOne({ serviceId });
+        
         if (!servicePlan) {
             return res.status(404).json({
                 success: false,
                 message: "Service plan not found for the given service ID"
             });
         }
-        const { basic, standard, premium } = req.body;
 
-        servicePlan.plans = [
-            {
-                basic: basic || servicePlan.plans[0].basic,
-                standard: standard || servicePlan.plans[0].standard,
-                premium: premium || servicePlan.plans[0].premium
-            }
-        ]; 
+        // Check if the request body wraps the tiers in a "plans" object, or sends them directly
+        const updates = req.body.plans || req.body;
+
+        // Deep merge the objects so we don't overwrite existing data (like features) 
+        // if we are only updating specific fields like `isRecommended` or `isAllIncluded`
+        if (updates.basic) {
+            servicePlan.plans.basic = {
+                ...(servicePlan.plans.basic ? servicePlan.plans.basic.toObject() : {}),
+                ...updates.basic
+            };
+        }
+
+        if (updates.standard) {
+            servicePlan.plans.standard = {
+                ...(servicePlan.plans.standard ? servicePlan.plans.standard.toObject() : {}),
+                ...updates.standard
+            };
+        }
+
+        if (updates.premium) {
+            servicePlan.plans.premium = {
+                ...(servicePlan.plans.premium ? servicePlan.plans.premium.toObject() : {}),
+                ...updates.premium
+            };
+        }
+
+        // Force mongoose to recognize that the mixed/nested 'plans' object has been modified
+        servicePlan.markModified('plans');
+        
         await servicePlan.save();
 
         return res.status(200).json({
@@ -138,24 +161,26 @@ export const updateServicePlan = async (req, res) => {
     }
 };
 
-
 export const deleteServicePlan = async (req, res) => {
     try {
         const serviceId = req.params.serviceId; 
+        
         if (!serviceId) {
             return res.status(400).json({
                 success: false,
                 message: "Service ID is required"
             });
         }
-        const servicePlan = await ServicePlan.findOne({ serviceId });
-        if (!servicePlan) {
+
+        // findOneAndDelete is more efficient than finding and then deleting separately
+        const deletedPlan = await ServicePlan.findOneAndDelete({ serviceId });
+        
+        if (!deletedPlan) {
             return res.status(404).json({
                 success: false,
                 message: "Service plan not found for the given service ID"
             });
         }
-        await ServicePlan.findByIdAndDelete(servicePlan._id);
 
         return res.status(200).json({
             success: true,

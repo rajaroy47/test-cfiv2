@@ -2,7 +2,7 @@ import Service from "../models/service.model.js";
 
 export const createService = async (req, res) => {
     try {
-        const { name, slug, serviceCategory, serviceImage, sideImage, shortDescription, longDescription, faq } = req.body;
+        const { name, slug, serviceCategory, serviceImage, sideImage, shortDescription, longDescription, requiredDocs, estimateDays, faq, isPopular, isActive } = req.body;
         
         if (!name || !slug || !serviceCategory || !sideImage || !shortDescription || !longDescription) {
             return res.status(400).json({ message: "Please provide all required fields" });
@@ -27,7 +27,11 @@ export const createService = async (req, res) => {
             sideImage,
             shortDescription,
             longDescription,
+            requiredDocs,
+            estimateDays,
             faq,
+            isPopular,
+            isActive,
             createdBy: req.user._id
         });
 
@@ -81,7 +85,7 @@ export const getServicesByCategory = async (req, res) => {
 export const updateService = async (req, res) => {
     try {
         const slug = req.params.slug;
-        const { name, serviceCategory, serviceImage, sideImage, shortDescription, longDescription, faq } = req.body;
+        const { name, serviceCategory, serviceImage, sideImage, shortDescription, longDescription, requiredDocs, estimateDays, faq, isPopular, isActive } = req.body;
         const service = await Service.findOne({ slug });
         if (!service) {
             return res.status(404).json({ message: "Service not found" });
@@ -95,7 +99,11 @@ export const updateService = async (req, res) => {
         service.sideImage = sideImage || service.sideImage;
         service.shortDescription = shortDescription || service.shortDescription;
         service.longDescription = longDescription || service.longDescription;
+        service.requiredDocs = requiredDocs || service.requiredDocs;
+        service.estimateDays = estimateDays || service.estimateDays;
         service.faq = faq || service.faq;
+        service.isPopular = isPopular || service.isPopular;
+        service.isActive = isActive || service.isActive;
         await service.save();
         res.status(200).json(service);
     } catch (error) {
@@ -110,7 +118,7 @@ export const deleteService = async (req, res) => {
         if (!service) {
             return res.status(404).json({ message: "Service not found" });
         }
-        await service.remove();
+        await service.deleteOne({ slug });
         res.status(200).json({ message: "Service deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });

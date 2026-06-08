@@ -6,6 +6,9 @@ import {
     verifyRefreshToken,
 } from "../utils/jwtToken.js";
 
+import { sendMail } from "../utils/sendMail.js";
+import { welcomeEmailTemplate } from "../templates/welcomeEmail.Template.js";
+
 const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -50,6 +53,12 @@ export const registerUser = async (req, res) => {
         const createdUser = await User.findById(user._id).select(
             "-password -refreshToken"
         );
+        
+        await sendMail({
+            to: createdUser.email,
+            subject: "Welcome to CFI V2.0",
+            html: welcomeEmailTemplate(createdUser.fullName),
+        });
 
         return res
             .status(201)
@@ -130,7 +139,7 @@ export const loginUser = async (req, res) => {
             .status(200)
             .cookie("accessToken", accessToken, {
                 ...cookieOptions,
-                maxAge: 15 * 60 * 1000,
+                maxAge: 55 * 60 * 1000,
             })
             .cookie("refreshToken", refreshToken, {
                 ...cookieOptions,
