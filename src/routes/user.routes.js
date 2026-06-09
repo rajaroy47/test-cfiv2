@@ -5,6 +5,7 @@ import { getMyOrders } from "../controllers/order.controller.js";
 import { getMyPaymentDetails, getRazorpayKey, getSuccessMsg, processPayment, verifyPayment } from "../controllers/payment.controller.js";
 
 import { upload } from "../middlewares/upload.middleware.js";
+import { getServiceStatus } from "../controllers/serviceStatus.controller.js";
 
 
 
@@ -23,6 +24,9 @@ router.post("/payment/success", isAuthenticated, getSuccessMsg);
 
 // payments
 router.get("/my-payments", isAuthenticated, getMyPaymentDetails);
+
+// serviceStatus
+router.get("/service-status/:serviceId", isAuthenticated, getServiceStatus)
 
 
 export default router;
