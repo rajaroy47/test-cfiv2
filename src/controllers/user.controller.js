@@ -135,28 +135,36 @@ export const updateUserProfile = async (req, res) => {
     }
 };
 
-// working on 
-// {
-//     "address": {
-//         "streetAddress": "MG Road, Howrah, Kolkata - 700001",
-//         "city": "Kolkata",
-//         "state": "West Bengal",
-//         "postalCode": "700001"
-//     },
 
-//     "identity": {
-//         "panCard": "AAAAA1234A",
-//         "aadhaarCard": "986585698569",
-//         "phone": "8101745698"
-//     }
-// }
+export const updatePassword = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        const { oldPassword, newPassword } = req.body;
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+        const isPasswordCorrect = await user.matchPassword(oldPassword);
+        if (!isPasswordCorrect) {
+            res.status(401).json({
+                success: false,
+                message: "Invalid old password",
+            });
+        }
+        user.password = newPassword;
+        await user.save();
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully",
+        });
+    }
+    catch (error) {
+        return res.staus(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
 
-// not working on
-
-// fullName              Ayon Manna
-
-// address               {"streetAddress":"MG Road","city":"Kolkata"}
-
-// identity              {"phone":"8101745698","panCard":"AAAAA1234A"}
-
-// avatar                [FILE]

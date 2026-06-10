@@ -26,7 +26,7 @@ router.post("/payment/success", isAuthenticated, getSuccessMsg);
 router.get("/my-payments", isAuthenticated, getMyPaymentDetails);
 
 // serviceStatus
-router.get("/service-status/:serviceId", isAuthenticated, getServiceStatus)
+router.get("/service-status/:serviceId", isAuthenticated, getServiceStatus);
 
 
 export default router;
