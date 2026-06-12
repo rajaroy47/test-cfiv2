@@ -16,3 +16,15 @@ export const uploadToCloudinary = (fileBuffer, folder = "uploads") => {
         streamifier.createReadStream(fileBuffer).pipe(stream);
     });
 };
+
+export const deleteFromCloudinary = (publicId) => {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.destroy(publicId)
+            .then((result) => {
+                resolve(result);
+            })
+            .catch((error) => {
+                reject(error);
+            });
+    });
+}

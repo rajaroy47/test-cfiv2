@@ -22,6 +22,30 @@ const articleSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    likes: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Like"
+        }
+    ],
+    likedBy: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
+    ],
+    comments: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Comment"
+        }
+    ],
+    commentsBy: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
+    ],
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

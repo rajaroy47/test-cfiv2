@@ -6,6 +6,7 @@ import { getMyPaymentDetails, getRazorpayKey, getSuccessMsg, processPayment, ver
 
 import { upload } from "../middlewares/upload.middleware.js";
 import { getServiceStatus } from "../controllers/serviceStatus.controller.js";
+import { articleLikeDislike, getArticleLikes } from "../controllers/article.controller.js";
 
 
 
@@ -27,6 +28,10 @@ router.get("/my-payments", isAuthenticated, getMyPaymentDetails);
 
 // serviceStatus
 router.get("/service-status/:serviceId", isAuthenticated, getServiceStatus);
+
+// article like/dislike
+router.post("/article/:id/likes", isAuthenticated, articleLikeDislike);
+
 
 
 export default router;

@@ -4,7 +4,7 @@ import { getAllServices, getServiceBySlug } from "../controllers/service.control
 import { getServicePlans, getServicePlanByServiceId } from "../controllers/servicePlan.controller.js";
 import { processPayment, getRazorpayKey, getSuccessMsg, verifyPayment } from "../controllers/payment.controller.js";
 
-import { getAllArticles, getArticleBySlug, getArticleById, getRelatedArticles } from "../controllers/article.controller.js";
+import { getAllArticles, getArticleBySlug, getArticleById, getRelatedArticles, getArticleLikes } from "../controllers/article.controller.js";
 
 
 const router = express.Router();
@@ -20,6 +20,9 @@ router.get("/articles", getAllArticles);
 router.get("/articles/slug/:slug", getArticleBySlug);
 router.get("/articles/:id/related", getRelatedArticles);
 router.get("/articles/:id", getArticleById);
+
+// get article like
+router.get("/article/:id/likes", getArticleLikes);
 
 
 export default router;
